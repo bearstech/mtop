@@ -44,7 +44,7 @@ class ThreadCount(object):
 class MemoryCount(object):
     def __init__(self):
         self.memory = dict()
-        self.rss = 0
+        self._rss = 0
 
     def count(self, p):
         try:
@@ -53,14 +53,20 @@ class MemoryCount(object):
                     if m.path[0] == '/':
                         self.memory[m.path] = m
                 if m.path[0] != '/':
-                    pass
-                    #print m.path, m.rss
-                self.rss += m.rss
+                    self._rss += m.rss
         except psutil.AccessDenied:
             pass
 
+    @property
+    def rss(self):
+        return self._rss + sum(m.rss for m in self.memory.values())
+
+    @property
+    def libs(self):
+        return len(self.memory)
+
     def __repr__(self):
-        return "<Memory %i>" % self.rss
+        return "<Memory %i (%i)>" % (self.rss, self.libs)
 
 
 class Stats(object):
