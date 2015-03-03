@@ -22,6 +22,10 @@ class IOCount(object):
             self.read_bytes += io.read_bytes
             self.write_bytes += io.write_bytes
 
+    def __repr__(self):
+        return "<IO %i %i %i %i>" % (self.read_count, self.write_count,
+                                     self.read_bytes, self.write_bytes)
+
 
 class ThreadCount(object):
     def __init__(self):
@@ -33,10 +37,14 @@ class ThreadCount(object):
         except psutil.AccessDenied:
             pass
 
+    def __repr__(self):
+        return "<Threads %i>" % self.threads
+
 
 class MemoryCount(object):
     def __init__(self):
         self.memory = dict()
+        self.rss = 0
 
     def count(self, p):
         try:
@@ -45,9 +53,14 @@ class MemoryCount(object):
                     if m.path[0] == '/':
                         self.memory[m.path] = m
                 if m.path[0] != '/':
-                    print m.path, m.rss
+                    pass
+                    #print m.path, m.rss
+                self.rss += m.rss
         except psutil.AccessDenied:
             pass
+
+    def __repr__(self):
+        return "<Memory %i>" % self.rss
 
 
 class Stats(object):
@@ -56,6 +69,7 @@ class Stats(object):
         self.users = users
 
     def the_procs(self):
+        "Iter over targeted process."
         for p in psutil.process_iter():
             try:
                 username = p.username()
@@ -66,20 +80,20 @@ class Stats(object):
 
     def poll(self, interval):
         time.sleep(interval)
-        thread = ThreadCount()
-        io = IOCount()
-        memory = MemoryCount()
+        stats = dict()
+        for user in self.users:
+            stats[user] = [ThreadCount(), IOCount(), MemoryCount()]
         for p in self.the_procs():
-            for c in [thread, io, memory]:
+            for c in stats[p.username()]:
                 c.count(p)
-        return thread, io, memory
+        return stats
 
     def loop(self, interval=1):
         try:
             delta = 0
             while True:
-                thread, io, memory = self.poll(delta)
-                print thread.threads
+                stats = self.poll(delta)
+                print stats
                 delta = interval
         except (KeyboardInterrupt, SystemExit):
             pass
@@ -88,5 +102,5 @@ class Stats(object):
 if __name__ == '__main__':
     import sys
 
-    s = Stats(sys.argv[1])
+    s = Stats(*sys.argv[1:])
     s.loop(5)
