@@ -106,6 +106,48 @@ class CPUCount(object):
         yield "percent", self.percent
 
 
+class FdCount(object):
+    key = "fd"
+
+    def __init__(self):
+        self.fd = 0
+
+    def count(self, p):
+        try:
+            self.fd += p.num_fds()
+        except psutil.AccessDenied:
+            pass
+
+    def __repr__(self):
+        return "<Fd %i>" % self.fd
+
+    def __iter__(self):
+        yield "count", self.fd
+
+
+class ConnectionCount(object):
+    key = "connection"
+
+    def __init__(self):
+        self.unix = 0
+        self.inet = 0
+
+    def count(self, p):
+        try:
+            self.inet += len(p.connections('inet'))
+            self.unix += len(p.connections('unix'))
+        except psutil.AccessDenied:
+            pass
+
+    def __repr__(self):
+        return "<Connection %i %i>" % (self.inet, self.unix)
+
+    def __iter__(self):
+        yield "inet", self.inet
+        yield "unix", self.unix
+
+
+
 class Stats(object):
 
     def __init__(self, *users):
@@ -125,7 +167,8 @@ class Stats(object):
         time.sleep(interval)
         stats = dict()
         for user in self.users:
-            stats[user] = [ThreadCount(), IOCount(), MemoryCount(), CPUCount()]
+            stats[user] = [ThreadCount(), IOCount(), MemoryCount(), CPUCount(),
+                           FdCount(), ConnectionCount()]
         for p in self.the_procs():
             for c in stats[p.username()]:
                 c.count(p)
