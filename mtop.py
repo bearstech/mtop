@@ -130,10 +130,15 @@ if __name__ == '__main__':
     from cStringIO import StringIO
 
     hostname = socket.gethostname()
-    graphite = GraphiteStore(host=sys.argv[1])
+    if sys.argv[1] == "-":
+        graphite = None
+        hz = 5
+    else:
+        graphite = GraphiteStore(host=sys.argv[1])
+        hz = 60
 
     s = Stats(*sys.argv[2:])
-    for top in s.loop(60):
+    for top in s.loop(hz):
         ts = time.time()
         buff = StringIO()
         for user, stats in top.items():
@@ -147,8 +152,11 @@ if __name__ == '__main__':
                                                                      ts))
         buff.seek(0)
         #try:
-        graphite._write_metric(buff.read())
-        graphite.close()
+        if graphite:
+            graphite._write_metric(buff.read())
+            graphite.close()
+        else:
+            print buff.read()
         #except:
             #graphite.logger.exception("Failed to write out the metrics!")
         #print ".",
