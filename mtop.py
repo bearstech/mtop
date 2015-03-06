@@ -188,9 +188,15 @@ class Stats(object):
 if __name__ == '__main__':
     import sys
     import socket
-    from graphite import GraphiteStore
+    import os
     from cStringIO import StringIO
 
+    from graphite import GraphiteStore
+
+    try:
+        os.nice(-20)
+    except:
+        pass
     hostname = socket.gethostname()
     if sys.argv[1] == "-":
         graphite = None
