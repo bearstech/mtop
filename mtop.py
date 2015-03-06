@@ -87,6 +87,25 @@ class MemoryCount(object):
         yield "rss", self.rss
 
 
+class CPUCount(object):
+    key = "cpu"
+
+    def __init__(self):
+        self.percent = 0.0
+
+    def count(self, p):
+        try:
+            self.percent += p.cpu_percent()
+        except psutil.AccessDenied:
+            pass
+
+    def __repr__(self):
+        return "<CPU %f>" % self.percent
+
+    def __iter__(self):
+        yield "percent", self.percent
+
+
 class Stats(object):
 
     def __init__(self, *users):
@@ -106,7 +125,7 @@ class Stats(object):
         time.sleep(interval)
         stats = dict()
         for user in self.users:
-            stats[user] = [ThreadCount(), IOCount(), MemoryCount()]
+            stats[user] = [ThreadCount(), IOCount(), MemoryCount(), CPUCount()]
         for p in self.the_procs():
             for c in stats[p.username()]:
                 c.count(p)
