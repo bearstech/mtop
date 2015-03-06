@@ -5,6 +5,8 @@ import time
 
 
 class IOCount(object):
+    key = "io"
+
     def __init__(self):
         self.read_count = 0
         self.write_count = 0
@@ -26,8 +28,16 @@ class IOCount(object):
         return "<IO %i %i %i %i>" % (self.read_count, self.write_count,
                                      self.read_bytes, self.write_bytes)
 
+    def __iter__(self):
+        yield "read_count", self.read_count
+        yield "write_count", self.read_count
+        yield "read_bytes", self.read_bytes
+        yield "write_bytes", self.write_bytes
+
 
 class ThreadCount(object):
+    key = "thread"
+
     def __init__(self):
         self.threads = 0
 
@@ -40,8 +50,13 @@ class ThreadCount(object):
     def __repr__(self):
         return "<Threads %i>" % self.threads
 
+    def __iter__(self):
+        yield "threads", self.threads
+
 
 class MemoryCount(object):
+    key = "memory"
+
     def __init__(self):
         self.memory = dict()
         self._rss = 0
@@ -67,6 +82,9 @@ class MemoryCount(object):
 
     def __repr__(self):
         return "<Memory %i (%i)>" % (self.rss, self.libs)
+
+    def __iter__(self):
+        yield "rss", self.rss
 
 
 class Stats(object):
@@ -99,7 +117,7 @@ class Stats(object):
             delta = 0
             while True:
                 stats = self.poll(delta)
-                print stats
+                yield stats
                 delta = interval
         except (KeyboardInterrupt, SystemExit):
             pass
@@ -107,6 +125,26 @@ class Stats(object):
 
 if __name__ == '__main__':
     import sys
+    import socket
+    #from graphite import GraphiteStore
+    from cStringIO import StringIO
+
+    hostname = socket.gethostname()
+    #graphite = GraphiteStore(host="localhost",
+                             #prefix="server.%s.mtop." % hostname)
 
     s = Stats(*sys.argv[1:])
-    s.loop(5)
+    for top in s.loop(5):
+        ts = time.time()
+        buff = StringIO()
+        for user, stats in top.items():
+            for stat in stats:
+                for k, v in stat:
+                    buff.write("servers.%s.mtop.%s.%s.%s %f %i\n" % (hostname,
+                                                                     user,
+                                                                     stat.key,
+                                                                     k,
+                                                                     float(v),
+                                                                     ts))
+        buff.seek(0)
+        print buff.read()
