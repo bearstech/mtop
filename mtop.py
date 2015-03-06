@@ -126,15 +126,14 @@ class Stats(object):
 if __name__ == '__main__':
     import sys
     import socket
-    #from graphite import GraphiteStore
+    from graphite import GraphiteStore
     from cStringIO import StringIO
 
     hostname = socket.gethostname()
-    #graphite = GraphiteStore(host="localhost",
-                             #prefix="server.%s.mtop." % hostname)
+    graphite = GraphiteStore(host=sys.argv[1])
 
-    s = Stats(*sys.argv[1:])
-    for top in s.loop(5):
+    s = Stats(*sys.argv[2:])
+    for top in s.loop(60):
         ts = time.time()
         buff = StringIO()
         for user, stats in top.items():
@@ -147,4 +146,8 @@ if __name__ == '__main__':
                                                                      float(v),
                                                                      ts))
         buff.seek(0)
-        print buff.read()
+        try:
+            graphite._write_metrics(buff.read())
+        except:
+            graphite.logger.exception("Failed to write out the metrics!")
+        print ".",
