@@ -146,8 +146,9 @@ if __name__ == '__main__':
                                                                      float(v),
                                                                      ts))
         buff.seek(0)
-        try:
-            graphite._write_metrics(buff.read())
-        except:
-            graphite.logger.exception("Failed to write out the metrics!")
-        print ".",
+        #try:
+        graphite._write_metric(buff.read())
+        graphite.close()
+        #except:
+            #graphite.logger.exception("Failed to write out the metrics!")
+        #print ".",
