@@ -3,6 +3,8 @@
 import psutil
 import time
 
+# Count class got a "key" property and are iterable
+
 
 class IOCount(object):
     key = "io"
@@ -147,8 +149,8 @@ class ConnectionCount(object):
         yield "unix", self.unix
 
 
-
 class Stats(object):
+    "Stats object count things."
 
     def __init__(self, *users):
         self.users = users
@@ -164,17 +166,19 @@ class Stats(object):
                 pass
 
     def poll(self, interval):
+        "Wait and ftech values from counters."
         time.sleep(interval)
         stats = dict()
         for user in self.users:
             stats[user] = [ThreadCount(), IOCount(), MemoryCount(), CPUCount(),
-                           FdCount(), ConnectionCount()]
+                           FdCount()]  # , ConnectionCount()]
         for p in self.the_procs():
             for c in stats[p.username()]:
                 c.count(p)
         return stats
 
     def loop(self, interval=1):
+        "Event loop."
         try:
             delta = 0
             while True:
