@@ -18,7 +18,7 @@ class IOCount(object):
     def count(self, p):
         try:
             io = p.io_counters()
-        except AttributeError:
+        except AttributeError, psutil.NoSuchProcess:
             pass
         else:
             self.read_count += io.read_count
@@ -46,7 +46,7 @@ class ThreadCount(object):
     def count(self, p):
         try:
             self.threads += p.num_threads()
-        except psutil.AccessDenied:
+        except psutil.AccessDenied, psutil.NoSuchProcess:
             pass
 
     def __repr__(self):
@@ -71,7 +71,7 @@ class MemoryCount(object):
                         self.memory[m.path] = m
                 if m.path[0] != '/':
                     self._rss += m.rss
-        except psutil.AccessDenied:
+        except psutil.AccessDenied, psutil.NoSuchProcess:
             pass
 
     @property
@@ -98,7 +98,7 @@ class CPUCount(object):
     def count(self, p):
         try:
             self.percent += p.cpu_percent()
-        except psutil.AccessDenied:
+        except psutil.AccessDenied, psutil.NoSuchProcess:
             pass
 
     def __repr__(self):
@@ -117,7 +117,7 @@ class FdCount(object):
     def count(self, p):
         try:
             self.fd += p.num_fds()
-        except psutil.AccessDenied:
+        except psutil.AccessDenied, psutil.NoSuchProcess:
             pass
 
     def __repr__(self):
@@ -138,7 +138,7 @@ class ConnectionCount(object):
         try:
             self.inet += len(p.connections('inet'))
             self.unix += len(p.connections('unix'))
-        except psutil.AccessDenied:
+        except psutil.AccessDenied, psutil.NoSuchProcess:
             pass
 
     def __repr__(self):
@@ -162,7 +162,7 @@ class Stats(object):
                 username = p.username()
                 if username in self.users:
                     yield p
-            except psutil.AccessDenied:
+            except psutil.AccessDenied, psutil.NoSuchProcess:
                 pass
 
     def poll(self, interval):
